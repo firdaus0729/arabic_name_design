@@ -45,6 +45,7 @@ type Props = {
   onSelectAllTokens: () => void
   sampleStyle: TokenStyle
   onApplyStyleToSelection: (patch: Partial<TokenStyle>) => void
+  onDownloadSvg: () => void
 }
 
 const SHAPE_CHOICES = ['⬛', '◆', '●', '▲', '⬟', '⬢']
@@ -117,22 +118,32 @@ export function ControlsPanel(props: Props) {
       </section>
 
       <section className="min-h-0 flex-1 space-y-2 overflow-y-auto rounded-xl border border-slate-200 bg-slate-50 p-2">
-        <div className="flex gap-1 overflow-x-auto pb-1">
-          {PANE_ICONS.map((item) => (
-            <button
-              key={item.pane}
-              type="button"
-              onClick={() => props.onActivePaneChange(item.pane)}
-              title={item.label}
-              className={`shrink-0 rounded-md border px-2 py-1.5 text-xs sm:px-2.5 sm:py-2 sm:text-sm ${
-                props.activePane === item.pane
-                  ? 'border-indigo-400 bg-indigo-50 text-indigo-700'
-                  : 'border-slate-200 bg-white text-slate-700'
-              }`}
-            >
-              {item.icon}
-            </button>
-          ))}
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={props.onDownloadSvg}
+            title="Export SVG"
+            className="shrink-0 rounded-md border border-slate-200 bg-blue-500 px-2 py-1.5 text-xs text-slate-700 sm:px-2.5 sm:py-2 sm:text-sm"
+          >
+            ⬇️
+          </button>
+          <div className="flex flex-1 gap-1 overflow-x-auto pb-1">
+            {PANE_ICONS.map((item) => (
+              <button
+                key={item.pane}
+                type="button"
+                onClick={() => props.onActivePaneChange(item.pane)}
+                title={item.label}
+                className={`shrink-0 rounded-md border px-2 py-1.5 text-xs sm:px-2.5 sm:py-2 sm:text-sm ${
+                  props.activePane === item.pane
+                    ? 'border-indigo-400 bg-indigo-50 text-indigo-700'
+                    : 'border-slate-200 bg-white text-slate-700'
+                }`}
+              >
+                {item.icon}
+              </button>
+            ))}
+          </div>
         </div>
 
         {props.activePane === 'text' ? (

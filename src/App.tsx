@@ -114,6 +114,18 @@ export default function App() {
     })
   }
 
+  const downloadSvg = () => {
+    const blob = new Blob([svgMarkup], { type: 'image/svg+xml;charset=utf-8' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = 'arabic-name-design.svg'
+    document.body.appendChild(a)
+    a.click()
+    a.remove()
+    URL.revokeObjectURL(url)
+  }
+
   return (
     <div dir="rtl" className="h-[100svh] w-full overflow-hidden bg-slate-50 p-2 sm:p-3">
       <div className="mx-auto flex h-full max-w-7xl min-h-0 flex-col gap-2">
@@ -154,6 +166,7 @@ export default function App() {
               onSelectAllTokens={() => setSelectedTokenIds(tokens.map((t) => t.id))}
               sampleStyle={sampleStyle}
               onApplyStyleToSelection={applyStyleToSelection}
+              onDownloadSvg={downloadSvg}
             />
           </aside>
         </div>
