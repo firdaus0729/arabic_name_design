@@ -3,10 +3,7 @@ import { ControlsPanel, type FontOption, type ToolPane } from './components/Cont
 import { Preview } from './components/Preview'
 import {
   buildArabicNameSvgString,
-  splitGraphemes,
-  type DesignToken,
-  type TokenStyle,
-  type TokenStyleMap,
+  type PreviewStylePreset,
 } from './components/arabicNameSvg'
 
 const FONT_OPTIONS: FontOption[] = [
@@ -17,102 +14,30 @@ const FONT_OPTIONS: FontOption[] = [
   { label: 'Noto Naskh Arabic', value: 'Noto Naskh Arabic, serif' },
 ]
 
-const DEFAULT_TOKEN_STYLE: TokenStyle = {
-  color: '#0f172a',
-  scale: 1,
-  rotate: 0,
-  fontSize: 96,
-  strokeColor: '#000000',
-  strokeWidth: 0,
-  hAlign: 'center',
-  vAlign: 'middle',
-  offsetX: 0,
-  offsetY: 0,
-}
-
 export default function App() {
-  const [tokens, setTokens] = useState<DesignToken[]>([])
-  const [nextTokenId, setNextTokenId] = useState(1)
   const [activePane, setActivePane] = useState<ToolPane>('text')
-  const [textDraft, setTextDraft] = useState('محمد')
+  const [textDraft, setTextDraft] = useState('محمد علي')
+  const [text, setText] = useState('محمد علي')
   const [fontFamily, setFontFamily] = useState(FONT_OPTIONS[0]!.value)
-  const [letterSpacingPx, setLetterSpacingPx] = useState(2)
-  const [shapeDraft, setShapeDraft] = useState('◆')
-  const [decorationDraft, setDecorationDraft] = useState('✦')
-  const [selectedTokenIds, setSelectedTokenIds] = useState<string[]>([])
-  const [tokenStyles, setTokenStyles] = useState<TokenStyleMap>({})
-
-  const tokenIds = useMemo(() => new Set(tokens.map((t) => t.id)), [tokens])
-  const selectedIdsNormalized = useMemo(
-    () => selectedTokenIds.filter((id) => tokenIds.has(id)),
-    [selectedTokenIds, tokenIds],
-  )
-
-  const sampleStyle = useMemo(() => {
-    const first = selectedIdsNormalized[0]
-    if (!first) return DEFAULT_TOKEN_STYLE
-    return tokenStyles[first] ?? DEFAULT_TOKEN_STYLE
-  }, [selectedIdsNormalized, tokenStyles])
+  const [textColor, setTextColor] = useState('#0f172a')
+  const [baseFontSize, setBaseFontSize] = useState(96)
+  const [letterSpacingPx, setLetterSpacingPx] = useState(0)
+  const [stylePreset, setStylePreset] = useState<PreviewStylePreset>('normal')
 
   const svgMarkup = useMemo(
     () =>
       buildArabicNameSvgString({
-        tokens,
-        tokenStyles,
+        text,
         fontFamily,
+        baseFontSize,
+        textColor,
+        stylePreset,
         letterSpacingPx,
       }),
-    [tokens, tokenStyles, fontFamily, letterSpacingPx],
+    [text, fontFamily, baseFontSize, textColor, stylePreset, letterSpacingPx],
   )
 
-  const addText = () => {
-    const chars = splitGraphemes(textDraft.trim())
-    if (!chars.length) return
-    setTokens((prev) => [
-      ...prev,
-      ...chars.map((char, idx) => ({
-        id: `tok-${nextTokenId + idx}`,
-        label: `Char`,
-        type: 'char' as const,
-        value: char,
-      })),
-    ])
-    setNextTokenId((prev) => prev + chars.length)
-    setTextDraft('')
-  }
-
-  const addShape = () => {
-    setTokens((prev) => [
-      ...prev,
-      { id: `tok-${nextTokenId}`, label: 'Shape', type: 'shape', value: shapeDraft },
-    ])
-    setNextTokenId((prev) => prev + 1)
-  }
-
-  const addDecoration = () => {
-    setTokens((prev) => [
-      ...prev,
-      { id: `tok-${nextTokenId}`, label: 'Decoration', type: 'decoration', value: decorationDraft },
-    ])
-    setNextTokenId((prev) => prev + 1)
-  }
-
-  const toggleToken = (tokenId: string) => {
-    setSelectedTokenIds((prev) =>
-      prev.includes(tokenId) ? prev.filter((id) => id !== tokenId) : [...prev, tokenId],
-    )
-  }
-
-  const applyStyleToSelection = (patch: Partial<TokenStyle>) => {
-    if (!selectedIdsNormalized.length) return
-    setTokenStyles((prev) => {
-      const next = { ...prev }
-      selectedIdsNormalized.forEach((id) => {
-        next[id] = { ...(prev[id] ?? DEFAULT_TOKEN_STYLE), ...patch }
-      })
-      return next
-    })
-  }
+  const applyText = () => setText(textDraft)
 
   const downloadSvg = () => {
     const blob = new Blob([svgMarkup], { type: 'image/svg+xml;charset=utf-8' })
@@ -145,27 +70,18 @@ export default function App() {
               onActivePaneChange={setActivePane}
               textDraft={textDraft}
               onTextDraftChange={setTextDraft}
-              onAddText={addText}
+              onApplyText={applyText}
               fontOptions={FONT_OPTIONS}
               fontFamily={fontFamily}
               onFontFamilyChange={setFontFamily}
+              stylePreset={stylePreset}
+              onStylePresetChange={setStylePreset}
+              baseFontSize={baseFontSize}
+              onBaseFontSizeChange={setBaseFontSize}
+              textColor={textColor}
+              onTextColorChange={setTextColor}
               letterSpacingPx={letterSpacingPx}
               onLetterSpacingPxChange={setLetterSpacingPx}
-              shapeDraft={shapeDraft}
-              shapeValue={shapeDraft}
-              onShapeDraftChange={setShapeDraft}
-              onAddShape={addShape}
-              decorationDraft={decorationDraft}
-              decorationValue={decorationDraft}
-              onDecorationDraftChange={setDecorationDraft}
-              onAddDecoration={addDecoration}
-              tokens={tokens}
-              selectedTokenIds={selectedIdsNormalized}
-              onToggleToken={toggleToken}
-              onClearSelection={() => setSelectedTokenIds([])}
-              onSelectAllTokens={() => setSelectedTokenIds(tokens.map((t) => t.id))}
-              sampleStyle={sampleStyle}
-              onApplyStyleToSelection={applyStyleToSelection}
               onDownloadSvg={downloadSvg}
             />
           </aside>

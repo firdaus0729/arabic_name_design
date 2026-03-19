@@ -1,121 +1,48 @@
 import { useState } from 'react'
-import type { DesignToken, TokenStyle } from './arabicNameSvg'
+import type { PreviewStylePreset } from './arabicNameSvg'
 
 export type FontOption = { label: string; value: string }
 export type ToolPane =
   | 'text'
-  | 'shape'
-  | 'decor'
   | 'fontFamily'
-  | 'letterSpacing'
-  | 'color'
+  | 'stylePreset'
   | 'fontSize'
-  | 'scale'
-  | 'rotate'
-  | 'borderColor'
-  | 'borderWidth'
-  | 'hAlign'
-  | 'vAlign'
-  | 'offsetX'
-  | 'offsetY'
+  | 'color'
 
 type Props = {
   activePane: ToolPane
   onActivePaneChange: (pane: ToolPane) => void
   textDraft: string
   onTextDraftChange: (next: string) => void
-  onAddText: () => void
+  onApplyText: () => void
   fontOptions: FontOption[]
   fontFamily: string
   onFontFamilyChange: (next: string) => void
+  stylePreset: PreviewStylePreset
+  onStylePresetChange: (next: PreviewStylePreset) => void
+  baseFontSize: number
+  onBaseFontSizeChange: (next: number) => void
+  textColor: string
+  onTextColorChange: (next: string) => void
   letterSpacingPx: number
   onLetterSpacingPxChange: (next: number) => void
-  shapeDraft: string
-  shapeValue: string
-  onShapeDraftChange: (next: string) => void
-  onAddShape: () => void
-  decorationDraft: string
-  decorationValue: string
-  onDecorationDraftChange: (next: string) => void
-  onAddDecoration: () => void
-  tokens: DesignToken[]
-  selectedTokenIds: string[]
-  onToggleToken: (tokenId: string) => void
-  onClearSelection: () => void
-  onSelectAllTokens: () => void
-  sampleStyle: TokenStyle
-  onApplyStyleToSelection: (patch: Partial<TokenStyle>) => void
   onDownloadSvg: () => void
 }
 
-const SHAPE_CHOICES = ['⬛', '◆', '●', '▲', '⬟', '⬢']
-const DECORATION_CHOICES = ['✦', '❈', '✿', '❋', '❖', '۞']
 const PANE_ICONS: { pane: ToolPane; label: string; icon: string }[] = [
   { pane: 'text', label: 'Text', icon: 'T' },
-  { pane: 'shape', label: 'Shape', icon: '⬟' },
-  { pane: 'decor', label: 'Decor', icon: '✦' },
   { pane: 'fontFamily', label: 'Font', icon: 'Aa' },
-  { pane: 'letterSpacing', label: 'Spacing', icon: '↔' },
-  { pane: 'color', label: 'Color', icon: '🎨' },
+  { pane: 'stylePreset', label: 'Style', icon: '✧' },
   { pane: 'fontSize', label: 'Size', icon: '🔠' },
-  { pane: 'scale', label: 'Scale', icon: '⤢' },
-  { pane: 'rotate', label: 'Rotate', icon: '⟳' },
-  { pane: 'borderColor', label: 'Border Color', icon: '◍' },
-  { pane: 'borderWidth', label: 'Border Width', icon: '▦' },
-  { pane: 'hAlign', label: 'H Align', icon: '↔️' },
-  { pane: 'vAlign', label: 'V Align', icon: '↕️' },
-  { pane: 'offsetX', label: 'Move X', icon: '⇆' },
-  { pane: 'offsetY', label: 'Move Y', icon: '⇅' },
+  { pane: 'color', label: 'Color', icon: '🎨' },
 ]
 
 export function ControlsPanel(props: Props) {
   const fontOptions = props.fontOptions.map((opt) => ({ value: opt.value, label: opt.label }))
-  const shapeOptions = SHAPE_CHOICES.map((shape) => ({ value: shape, label: shape }))
-  const decorOptions = DECORATION_CHOICES.map((decor) => ({ value: decor, label: decor }))
 
   return (
     <div className="flex h-full min-h-0 flex-col gap-2 rounded-2xl border border-slate-200 bg-white p-2 shadow-sm">
-      <section className="shrink-0 rounded-xl border border-slate-200 bg-slate-50 p-2">
-        <div className="mb-1 flex items-center justify-between gap-2">
-          <h2 className="text-sm font-semibold text-slate-900">Tokens</h2>
-          <div className="flex gap-2">
-            <button
-              type="button"
-              onClick={props.onSelectAllTokens}
-              className="rounded-md border border-slate-200 bg-white px-2 py-1 text-xs"
-            >
-              Select all
-            </button>
-            <button
-              type="button"
-              onClick={props.onClearSelection}
-              className="rounded-md border border-slate-200 bg-white px-2 py-1 text-xs"
-            >
-              Clear
-            </button>
-          </div>
-        </div>
-        <div className="grid grid-cols-10 gap-0 sm:grid-cols-12">
-          {props.tokens.map((token) => {
-            const selected = props.selectedTokenIds.includes(token.id)
-            return (
-              <button
-                key={token.id}
-                type="button"
-                onClick={() => props.onToggleToken(token.id)}
-                className={`min-w-0 rounded-sm border px-0 py-1.5 text-[11px] leading-none sm:px-0.5 sm:text-xs ${
-                  selected
-                    ? 'border-indigo-400 bg-indigo-50 text-indigo-700'
-                    : 'border-slate-200 bg-white text-slate-700'
-                }`}
-                title={`${token.label} (${token.type})`}
-              >
-                {token.value === ' ' ? '␣' : token.value}
-              </button>
-            )
-          })}
-        </div>
-      </section>
+
 
       <section className="min-h-0 flex-1 space-y-2 overflow-y-auto rounded-xl border border-slate-200 bg-slate-50 p-2">
         <div className="flex items-center gap-2">
@@ -123,7 +50,7 @@ export function ControlsPanel(props: Props) {
             type="button"
             onClick={props.onDownloadSvg}
             title="Export SVG"
-            className="shrink-0 rounded-md border border-slate-200 bg-blue-500 px-2 py-1.5 text-xs text-slate-700 sm:px-2.5 sm:py-2 sm:text-sm"
+            className="shrink-0 rounded-md border border-slate-200 bg-white px-2 py-1.5 text-xs text-slate-700 sm:px-2.5 sm:py-2 sm:text-sm"
           >
             ⬇️
           </button>
@@ -148,7 +75,7 @@ export function ControlsPanel(props: Props) {
 
         {props.activePane === 'text' ? (
           <div className="rounded-lg border border-slate-200 bg-white p-2">
-            <label className="mb-1 block text-sm font-medium text-slate-700">Text Input (Add)</label>
+            <label className="mb-1 block text-sm font-medium text-slate-700">Arabic Text</label>
             <div className="flex gap-2">
               <input
                 value={props.textDraft}
@@ -161,51 +88,7 @@ export function ControlsPanel(props: Props) {
               />
               <button
                 type="button"
-                onClick={props.onAddText}
-                className="rounded-lg bg-slate-900 px-3 py-2 text-sm font-semibold text-white"
-              >
-                OK
-              </button>
-            </div>
-          </div>
-        ) : null}
-
-        {props.activePane === 'shape' ? (
-          <div className="rounded-lg border border-slate-200 bg-white p-2">
-            <label className="mb-1 block text-sm font-medium text-slate-700">Shape (Add)</label>
-            <div className="flex gap-2">
-              <div className="w-full">
-                <UpwardSelect
-                  value={props.shapeDraft}
-                  options={shapeOptions}
-                  onChange={props.onShapeDraftChange}
-                />
-              </div>
-              <button
-                type="button"
-                onClick={props.onAddShape}
-                className="rounded-lg bg-slate-900 px-3 py-2 text-sm font-semibold text-white"
-              >
-                OK
-              </button>
-            </div>
-          </div>
-        ) : null}
-
-        {props.activePane === 'decor' ? (
-          <div className="rounded-lg border border-slate-200 bg-white p-2">
-            <label className="mb-1 block text-sm font-medium text-slate-700">Decoration (Add)</label>
-            <div className="flex gap-2">
-              <div className="w-full">
-                <UpwardSelect
-                  value={props.decorationDraft}
-                  options={decorOptions}
-                  onChange={props.onDecorationDraftChange}
-                />
-              </div>
-              <button
-                type="button"
-                onClick={props.onAddDecoration}
+                onClick={props.onApplyText}
                 className="rounded-lg bg-slate-900 px-3 py-2 text-sm font-semibold text-white"
               >
                 OK
@@ -227,14 +110,38 @@ export function ControlsPanel(props: Props) {
           </div>
         ) : null}
 
-        {props.activePane === 'letterSpacing' ? (
+        {props.activePane === 'stylePreset' ? (
+          <div className="space-y-3 rounded-lg border border-slate-200 bg-white p-2">
+            <label className="mb-1 block text-sm text-slate-700">Style Preset</label>
+            <select
+              value={props.stylePreset}
+              onChange={(e) => props.onStylePresetChange(e.target.value as PreviewStylePreset)}
+              className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm"
+            >
+              <option value="normal">Normal</option>
+              <option value="slightStretch">Slight Stretch</option>
+              <option value="centeredElegant">Centered Elegant</option>
+            </select>
+          </div>
+        ) : null}
+
+        {props.activePane === 'fontSize' ? (
           <div className="space-y-3 rounded-lg border border-slate-200 bg-white p-2">
             <Slider
-              label="Global letter spacing"
-              value={`${props.letterSpacingPx}px`}
-              min={0}
-              max={20}
-              step={0.5}
+              label="Base font size"
+              value={`${Math.round(props.baseFontSize)}px`}
+              min={20}
+              max={160}
+              step={1}
+              current={props.baseFontSize}
+              onChange={props.onBaseFontSizeChange}
+            />
+            <Slider
+              label="Balanced spacing"
+              value={`${props.letterSpacingPx.toFixed(1)}px`}
+              min={-1}
+              max={4}
+              step={0.1}
               current={props.letterSpacingPx}
               onChange={props.onLetterSpacingPxChange}
             />
@@ -243,140 +150,10 @@ export function ControlsPanel(props: Props) {
 
         {props.activePane === 'color' ? (
           <div className="space-y-3 rounded-lg border border-slate-200 bg-white p-2">
-            <h2 className="text-sm font-semibold text-slate-900">Color</h2>
-            <p className="text-xs text-slate-500">
-              Active selection count: {props.selectedTokenIds.length}
-            </p>
             <ColorRow
-              label="Color"
-              color={props.sampleStyle.color}
-              onChange={(v) => props.onApplyStyleToSelection({ color: v })}
-            />
-          </div>
-        ) : null}
-
-        {props.activePane === 'fontSize' ? (
-          <div className="space-y-3 rounded-lg border border-slate-200 bg-white p-2">
-            <Slider
-              label="Font size"
-              value={`${Math.round(props.sampleStyle.fontSize)}px`}
-              min={20}
-              max={160}
-              step={1}
-              current={props.sampleStyle.fontSize}
-              onChange={(v) => props.onApplyStyleToSelection({ fontSize: v })}
-            />
-          </div>
-        ) : null}
-
-        {props.activePane === 'scale' ? (
-          <div className="space-y-3 rounded-lg border border-slate-200 bg-white p-2">
-            <Slider
-              label="Scale"
-              value={`${props.sampleStyle.scale.toFixed(2)}x`}
-              min={0.5}
-              max={2}
-              step={0.05}
-              current={props.sampleStyle.scale}
-              onChange={(v) => props.onApplyStyleToSelection({ scale: v })}
-            />
-          </div>
-        ) : null}
-
-        {props.activePane === 'rotate' ? (
-          <div className="space-y-3 rounded-lg border border-slate-200 bg-white p-2">
-            <Slider
-              label="Rotation"
-              value={`${Math.round(props.sampleStyle.rotate)}°`}
-              min={-180}
-              max={180}
-              step={1}
-              current={props.sampleStyle.rotate}
-              onChange={(v) => props.onApplyStyleToSelection({ rotate: v })}
-            />
-          </div>
-        ) : null}
-
-        {props.activePane === 'borderColor' ? (
-          <div className="space-y-3 rounded-lg border border-slate-200 bg-white p-2">
-            <ColorRow
-              label="Border color"
-              color={props.sampleStyle.strokeColor || '#000000'}
-              onChange={(v) => props.onApplyStyleToSelection({ strokeColor: v })}
-            />
-          </div>
-        ) : null}
-
-        {props.activePane === 'borderWidth' ? (
-          <div className="space-y-3 rounded-lg border border-slate-200 bg-white p-2">
-            <Slider
-              label="Border width"
-              value={`${props.sampleStyle.strokeWidth.toFixed(1)}px`}
-              min={0}
-              max={8}
-              step={0.5}
-              current={props.sampleStyle.strokeWidth}
-              onChange={(v) => props.onApplyStyleToSelection({ strokeWidth: v })}
-            />
-          </div>
-        ) : null}
-
-        {props.activePane === 'hAlign' ? (
-          <div className="space-y-3 rounded-lg border border-slate-200 bg-white p-2">
-            <select
-              className="w-full rounded-lg border border-slate-200 px-2 py-2 text-sm"
-              value={props.sampleStyle.hAlign}
-              onChange={(e) =>
-                props.onApplyStyleToSelection({ hAlign: e.target.value as TokenStyle['hAlign'] })
-              }
-            >
-              <option value="left">Left Align</option>
-              <option value="center">Center Align</option>
-              <option value="right">Right Align</option>
-            </select>
-          </div>
-        ) : null}
-
-        {props.activePane === 'vAlign' ? (
-          <div className="space-y-3 rounded-lg border border-slate-200 bg-white p-2">
-            <select
-              className="w-full rounded-lg border border-slate-200 px-2 py-2 text-sm"
-              value={props.sampleStyle.vAlign}
-              onChange={(e) =>
-                props.onApplyStyleToSelection({ vAlign: e.target.value as TokenStyle['vAlign'] })
-              }
-            >
-              <option value="top">Top Align</option>
-              <option value="middle">Middle Align</option>
-              <option value="bottom">Bottom Align</option>
-            </select>
-          </div>
-        ) : null}
-
-        {props.activePane === 'offsetX' ? (
-          <div className="space-y-3 rounded-lg border border-slate-200 bg-white p-2">
-            <Slider
-              label="Offset X"
-              value={`${Math.round(props.sampleStyle.offsetX)}px`}
-              min={-100}
-              max={100}
-              step={1}
-              current={props.sampleStyle.offsetX}
-              onChange={(v) => props.onApplyStyleToSelection({ offsetX: v })}
-            />
-          </div>
-        ) : null}
-
-        {props.activePane === 'offsetY' ? (
-          <div className="space-y-3 rounded-lg border border-slate-200 bg-white p-2">
-            <Slider
-              label="Offset Y"
-              value={`${Math.round(props.sampleStyle.offsetY)}px`}
-              min={-100}
-              max={100}
-              step={1}
-              current={props.sampleStyle.offsetY}
-              onChange={(v) => props.onApplyStyleToSelection({ offsetY: v })}
+              label="Text color"
+              color={props.textColor}
+              onChange={props.onTextColorChange}
             />
           </div>
         ) : null}
