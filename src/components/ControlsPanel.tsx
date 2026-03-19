@@ -94,7 +94,7 @@ export function ControlsPanel(props: Props) {
             </button>
           </div>
         </div>
-        <div className="grid grid-cols-7 gap-0 sm:grid-cols-8">
+        <div className="grid grid-cols-10 gap-0 sm:grid-cols-12">
           {props.tokens.map((token) => {
             const selected = props.selectedTokenIds.includes(token.id)
             return (
@@ -102,7 +102,7 @@ export function ControlsPanel(props: Props) {
                 key={token.id}
                 type="button"
                 onClick={() => props.onToggleToken(token.id)}
-                className={`rounded-lg border px-2 py-2 text-sm ${
+                className={`min-w-0 rounded-sm border px-0 py-1.5 text-[11px] leading-none sm:px-0.5 sm:text-xs ${
                   selected
                     ? 'border-indigo-400 bg-indigo-50 text-indigo-700'
                     : 'border-slate-200 bg-white text-slate-700'
@@ -117,14 +117,14 @@ export function ControlsPanel(props: Props) {
       </section>
 
       <section className="min-h-0 flex-1 space-y-2 overflow-y-auto rounded-xl border border-slate-200 bg-slate-50 p-2">
-        <div className="grid grid-cols-7 gap-0">
+        <div className="flex gap-1 overflow-x-auto pb-1">
           {PANE_ICONS.map((item) => (
             <button
               key={item.pane}
               type="button"
               onClick={() => props.onActivePaneChange(item.pane)}
               title={item.label}
-              className={`rounded-lg border px-3 py-2 text-sm ${
+              className={`shrink-0 rounded-md border px-2 py-1.5 text-xs sm:px-2.5 sm:py-2 sm:text-sm ${
                 props.activePane === item.pane
                   ? 'border-indigo-400 bg-indigo-50 text-indigo-700'
                   : 'border-slate-200 bg-white text-slate-700'
@@ -136,7 +136,7 @@ export function ControlsPanel(props: Props) {
         </div>
 
         {props.activePane === 'text' ? (
-          <div className="rounded-lg border border-slate-200 bg-white p-3">
+          <div className="rounded-lg border border-slate-200 bg-white p-2">
             <label className="mb-1 block text-sm font-medium text-slate-700">Text Input (Add)</label>
             <div className="flex gap-2">
               <input
@@ -160,7 +160,7 @@ export function ControlsPanel(props: Props) {
         ) : null}
 
         {props.activePane === 'shape' ? (
-          <div className="rounded-lg border border-slate-200 bg-white p-3">
+          <div className="rounded-lg border border-slate-200 bg-white p-2">
             <label className="mb-1 block text-sm font-medium text-slate-700">Shape (Add)</label>
             <div className="flex gap-2">
               <div className="w-full">
@@ -182,7 +182,7 @@ export function ControlsPanel(props: Props) {
         ) : null}
 
         {props.activePane === 'decor' ? (
-          <div className="rounded-lg border border-slate-200 bg-white p-3">
+          <div className="rounded-lg border border-slate-200 bg-white p-2">
             <label className="mb-1 block text-sm font-medium text-slate-700">Decoration (Add)</label>
             <div className="flex gap-2">
               <div className="w-full">
@@ -204,7 +204,7 @@ export function ControlsPanel(props: Props) {
         ) : null}
 
         {props.activePane === 'fontFamily' ? (
-          <div className="space-y-3 rounded-lg border border-slate-200 bg-white p-3">
+          <div className="space-y-3 rounded-lg border border-slate-200 bg-white p-2">
             <div>
               <label className="mb-1 block text-sm text-slate-700">Font Family</label>
               <UpwardSelect
@@ -217,7 +217,7 @@ export function ControlsPanel(props: Props) {
         ) : null}
 
         {props.activePane === 'letterSpacing' ? (
-          <div className="space-y-3 rounded-lg border border-slate-200 bg-white p-3">
+          <div className="space-y-3 rounded-lg border border-slate-200 bg-white p-2">
             <Slider
               label="Global letter spacing"
               value={`${props.letterSpacingPx}px`}
@@ -231,7 +231,7 @@ export function ControlsPanel(props: Props) {
         ) : null}
 
         {props.activePane === 'color' ? (
-          <div className="space-y-3 rounded-lg border border-slate-200 bg-white p-3">
+          <div className="space-y-3 rounded-lg border border-slate-200 bg-white p-2">
             <h2 className="text-sm font-semibold text-slate-900">Color</h2>
             <p className="text-xs text-slate-500">
               Active selection count: {props.selectedTokenIds.length}
@@ -245,7 +245,7 @@ export function ControlsPanel(props: Props) {
         ) : null}
 
         {props.activePane === 'fontSize' ? (
-          <div className="space-y-3 rounded-lg border border-slate-200 bg-white p-3">
+          <div className="space-y-3 rounded-lg border border-slate-200 bg-white p-2">
             <Slider
               label="Font size"
               value={`${Math.round(props.sampleStyle.fontSize)}px`}
@@ -259,7 +259,7 @@ export function ControlsPanel(props: Props) {
         ) : null}
 
         {props.activePane === 'scale' ? (
-          <div className="space-y-3 rounded-lg border border-slate-200 bg-white p-3">
+          <div className="space-y-3 rounded-lg border border-slate-200 bg-white p-2">
             <Slider
               label="Scale"
               value={`${props.sampleStyle.scale.toFixed(2)}x`}
@@ -273,7 +273,7 @@ export function ControlsPanel(props: Props) {
         ) : null}
 
         {props.activePane === 'rotate' ? (
-          <div className="space-y-3 rounded-lg border border-slate-200 bg-white p-3">
+          <div className="space-y-3 rounded-lg border border-slate-200 bg-white p-2">
             <Slider
               label="Rotation"
               value={`${Math.round(props.sampleStyle.rotate)}°`}
@@ -287,7 +287,7 @@ export function ControlsPanel(props: Props) {
         ) : null}
 
         {props.activePane === 'borderColor' ? (
-          <div className="space-y-3 rounded-lg border border-slate-200 bg-white p-3">
+          <div className="space-y-3 rounded-lg border border-slate-200 bg-white p-2">
             <ColorRow
               label="Border color"
               color={props.sampleStyle.strokeColor || '#000000'}
@@ -297,7 +297,7 @@ export function ControlsPanel(props: Props) {
         ) : null}
 
         {props.activePane === 'borderWidth' ? (
-          <div className="space-y-3 rounded-lg border border-slate-200 bg-white p-3">
+          <div className="space-y-3 rounded-lg border border-slate-200 bg-white p-2">
             <Slider
               label="Border width"
               value={`${props.sampleStyle.strokeWidth.toFixed(1)}px`}
@@ -311,7 +311,7 @@ export function ControlsPanel(props: Props) {
         ) : null}
 
         {props.activePane === 'hAlign' ? (
-          <div className="space-y-3 rounded-lg border border-slate-200 bg-white p-3">
+          <div className="space-y-3 rounded-lg border border-slate-200 bg-white p-2">
             <select
               className="w-full rounded-lg border border-slate-200 px-2 py-2 text-sm"
               value={props.sampleStyle.hAlign}
@@ -327,7 +327,7 @@ export function ControlsPanel(props: Props) {
         ) : null}
 
         {props.activePane === 'vAlign' ? (
-          <div className="space-y-3 rounded-lg border border-slate-200 bg-white p-3">
+          <div className="space-y-3 rounded-lg border border-slate-200 bg-white p-2">
             <select
               className="w-full rounded-lg border border-slate-200 px-2 py-2 text-sm"
               value={props.sampleStyle.vAlign}
@@ -343,7 +343,7 @@ export function ControlsPanel(props: Props) {
         ) : null}
 
         {props.activePane === 'offsetX' ? (
-          <div className="space-y-3 rounded-lg border border-slate-200 bg-white p-3">
+          <div className="space-y-3 rounded-lg border border-slate-200 bg-white p-2">
             <Slider
               label="Offset X"
               value={`${Math.round(props.sampleStyle.offsetX)}px`}
@@ -357,7 +357,7 @@ export function ControlsPanel(props: Props) {
         ) : null}
 
         {props.activePane === 'offsetY' ? (
-          <div className="space-y-3 rounded-lg border border-slate-200 bg-white p-3">
+          <div className="space-y-3 rounded-lg border border-slate-200 bg-white p-2">
             <Slider
               label="Offset Y"
               value={`${Math.round(props.sampleStyle.offsetY)}px`}
