@@ -1,11 +1,13 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
-import heroImg from './assets/hero.png'
-import './App.css'
-import { ControlsPanel, type FontOption } from './components/ControlsPanel'
+import { useMemo, useState } from 'react'
+import { ControlsPanel, type FontOption, type ToolPane } from './components/ControlsPanel'
 import { Preview } from './components/Preview'
-import { buildArabicNameSvgString } from './components/arabicNameSvg'
+import {
+  buildArabicNameSvgString,
+  splitGraphemes,
+  type DesignToken,
+  type TokenStyle,
+  type TokenStyleMap,
+} from './components/arabicNameSvg'
 
 const FONT_OPTIONS: FontOption[] = [
   { label: 'Amiri', value: 'Amiri, serif' },
@@ -15,239 +17,147 @@ const FONT_OPTIONS: FontOption[] = [
   { label: 'Noto Naskh Arabic', value: 'Noto Naskh Arabic, serif' },
 ]
 
-function App() {
-  const [count, setCount] = useState(0)
-  const [arabicText, setArabicText] = useState('محمد')
+const DEFAULT_TOKEN_STYLE: TokenStyle = {
+  color: '#0f172a',
+  scale: 1,
+  rotate: 0,
+  fontSize: 96,
+  strokeColor: '#000000',
+  strokeWidth: 0,
+  hAlign: 'center',
+  vAlign: 'middle',
+  offsetX: 0,
+  offsetY: 0,
+}
+
+export default function App() {
+  const [tokens, setTokens] = useState<DesignToken[]>([])
+  const [nextTokenId, setNextTokenId] = useState(1)
+  const [activePane, setActivePane] = useState<ToolPane>('text')
+  const [textDraft, setTextDraft] = useState('محمد')
   const [fontFamily, setFontFamily] = useState(FONT_OPTIONS[0]!.value)
-  const [fontSize, setFontSize] = useState(96)
   const [letterSpacingPx, setLetterSpacingPx] = useState(2)
-  const [stretchX, setStretchX] = useState(1)
-  const [color, setColor] = useState('#0f172a')
+  const [shapeDraft, setShapeDraft] = useState('◆')
+  const [decorationDraft, setDecorationDraft] = useState('✦')
+  const [selectedTokenIds, setSelectedTokenIds] = useState<string[]>([])
+  const [tokenStyles, setTokenStyles] = useState<TokenStyleMap>({})
 
-  const handleDownloadSvg = () => {
-    const svgMarkup = buildArabicNameSvgString({
-      text: arabicText,
-      fontFamily,
-      fontSize,
-      letterSpacingPx,
-      stretchX,
-      color,
+  const tokenIds = useMemo(() => new Set(tokens.map((t) => t.id)), [tokens])
+  const selectedIdsNormalized = useMemo(
+    () => selectedTokenIds.filter((id) => tokenIds.has(id)),
+    [selectedTokenIds, tokenIds],
+  )
+
+  const sampleStyle = useMemo(() => {
+    const first = selectedIdsNormalized[0]
+    if (!first) return DEFAULT_TOKEN_STYLE
+    return tokenStyles[first] ?? DEFAULT_TOKEN_STYLE
+  }, [selectedIdsNormalized, tokenStyles])
+
+  const svgMarkup = useMemo(
+    () =>
+      buildArabicNameSvgString({
+        tokens,
+        tokenStyles,
+        fontFamily,
+        letterSpacingPx,
+      }),
+    [tokens, tokenStyles, fontFamily, letterSpacingPx],
+  )
+
+  const addText = () => {
+    const chars = splitGraphemes(textDraft.trim())
+    if (!chars.length) return
+    setTokens((prev) => [
+      ...prev,
+      ...chars.map((char, idx) => ({
+        id: `tok-${nextTokenId + idx}`,
+        label: `Char`,
+        type: 'char' as const,
+        value: char,
+      })),
+    ])
+    setNextTokenId((prev) => prev + chars.length)
+    setTextDraft('')
+  }
+
+  const addShape = () => {
+    setTokens((prev) => [
+      ...prev,
+      { id: `tok-${nextTokenId}`, label: 'Shape', type: 'shape', value: shapeDraft },
+    ])
+    setNextTokenId((prev) => prev + 1)
+  }
+
+  const addDecoration = () => {
+    setTokens((prev) => [
+      ...prev,
+      { id: `tok-${nextTokenId}`, label: 'Decoration', type: 'decoration', value: decorationDraft },
+    ])
+    setNextTokenId((prev) => prev + 1)
+  }
+
+  const toggleToken = (tokenId: string) => {
+    setSelectedTokenIds((prev) =>
+      prev.includes(tokenId) ? prev.filter((id) => id !== tokenId) : [...prev, tokenId],
+    )
+  }
+
+  const applyStyleToSelection = (patch: Partial<TokenStyle>) => {
+    if (!selectedIdsNormalized.length) return
+    setTokenStyles((prev) => {
+      const next = { ...prev }
+      selectedIdsNormalized.forEach((id) => {
+        next[id] = { ...(prev[id] ?? DEFAULT_TOKEN_STYLE), ...patch }
+      })
+      return next
     })
-
-    const blob = new Blob([svgMarkup], { type: 'image/svg+xml;charset=utf-8' })
-    const url = URL.createObjectURL(blob)
-
-    const a = document.createElement('a')
-    a.href = url
-    a.download = 'arabic-name.svg'
-    document.body.appendChild(a)
-    a.click()
-    a.remove()
-
-    URL.revokeObjectURL(url)
   }
 
   return (
-    <>
-      {/* RTL Arabic Name Designer Tool (prototype) */}
-      <div
-        dir="rtl"
-        className="min-h-dvh w-full overflow-x-hidden bg-gradient-to-b from-slate-50 to-white px-4 py-6 sm:px-6"
-      >
-        <div className="mx-auto max-w-6xl">
-          <header className="mb-6">
-            <h1 className="text-2xl font-semibold tracking-tight text-slate-900 sm:text-3xl">
-              Arabic Name Designer Tool
-            </h1>
-            <p className="mt-2 text-sm text-slate-600">
-              Type your name and adjust font, spacing and stretch. Live preview updates instantly.
-            </p>
-          </header>
+    <div dir="rtl" className="h-[100svh] w-full overflow-hidden bg-slate-50 p-2 sm:p-3">
+      <div className="mx-auto flex h-full max-w-7xl min-h-0 flex-col gap-2">
+        <header className="shrink-0 rounded-2xl border border-slate-200 bg-white px-3 py-2 shadow-sm">
+          <h1 className="text-xl font-semibold text-slate-900 sm:text-2xl text-center">
+            Arabic Name Designer Prototype
+          </h1>
+        </header>
 
-          <div className="flex flex-col gap-6 lg:flex-row lg:items-start">
-            {/* Desktop: controls on the left */}
-            <aside className="hidden w-full lg:block lg:w-[420px] lg:flex-shrink-0">
-              <ControlsPanel
-                variant="all"
-                text={arabicText}
-                onTextChange={setArabicText}
-                fontOptions={FONT_OPTIONS}
-                fontFamily={fontFamily}
-                onFontFamilyChange={setFontFamily}
-                fontSize={fontSize}
-                onFontSizeChange={setFontSize}
-                letterSpacingPx={letterSpacingPx}
-                onLetterSpacingPxChange={setLetterSpacingPx}
-                stretchX={stretchX}
-                onStretchXChange={setStretchX}
-                color={color}
-                onColorChange={setColor}
-                onDownloadSvg={handleDownloadSvg}
-              />
-            </aside>
-
-            <section className="flex flex-col gap-6 lg:flex-1">
-              {/* Mobile: input first */}
-              <div className="block lg:hidden">
-                <ControlsPanel
-                  variant="inputOnly"
-                  text={arabicText}
-                  onTextChange={setArabicText}
-                  fontOptions={FONT_OPTIONS}
-                  fontFamily={fontFamily}
-                  onFontFamilyChange={setFontFamily}
-                  fontSize={fontSize}
-                  onFontSizeChange={setFontSize}
-                  letterSpacingPx={letterSpacingPx}
-                  onLetterSpacingPxChange={setLetterSpacingPx}
-                  stretchX={stretchX}
-                  onStretchXChange={setStretchX}
-                  color={color}
-                  onColorChange={setColor}
-                  onDownloadSvg={handleDownloadSvg}
-                />
-              </div>
-
-              <Preview
-                text={arabicText}
-                fontFamily={fontFamily}
-                fontSize={fontSize}
-                letterSpacingPx={letterSpacingPx}
-                stretchX={stretchX}
-                color={color}
-              />
-
-              {/* Mobile: controls after preview */}
-              <div className="block lg:hidden">
-                <ControlsPanel
-                  variant="controlsOnly"
-                  text={arabicText}
-                  onTextChange={setArabicText}
-                  fontOptions={FONT_OPTIONS}
-                  fontFamily={fontFamily}
-                  onFontFamilyChange={setFontFamily}
-                  fontSize={fontSize}
-                  onFontSizeChange={setFontSize}
-                  letterSpacingPx={letterSpacingPx}
-                  onLetterSpacingPxChange={setLetterSpacingPx}
-                  stretchX={stretchX}
-                  onStretchXChange={setStretchX}
-                  color={color}
-                  onColorChange={setColor}
-                  onDownloadSvg={handleDownloadSvg}
-                />
-              </div>
-            </section>
-          </div>
+        <div className="flex min-h-0 flex-1 flex-col gap-2 lg:flex-row">
+          <section className="order-1 h-[40svh] min-h-0 min-w-0 lg:order-2 lg:h-auto lg:flex-1">
+            <Preview svgMarkup={svgMarkup} />
+          </section>
+          <aside className="order-2 min-h-0 w-full flex-1 lg:order-1 lg:w-[440px] lg:flex-none">
+            <ControlsPanel
+              activePane={activePane}
+              onActivePaneChange={setActivePane}
+              textDraft={textDraft}
+              onTextDraftChange={setTextDraft}
+              onAddText={addText}
+              fontOptions={FONT_OPTIONS}
+              fontFamily={fontFamily}
+              onFontFamilyChange={setFontFamily}
+              letterSpacingPx={letterSpacingPx}
+              onLetterSpacingPxChange={setLetterSpacingPx}
+              shapeDraft={shapeDraft}
+              shapeValue={shapeDraft}
+              onShapeDraftChange={setShapeDraft}
+              onAddShape={addShape}
+              decorationDraft={decorationDraft}
+              decorationValue={decorationDraft}
+              onDecorationDraftChange={setDecorationDraft}
+              onAddDecoration={addDecoration}
+              tokens={tokens}
+              selectedTokenIds={selectedIdsNormalized}
+              onToggleToken={toggleToken}
+              onClearSelection={() => setSelectedTokenIds([])}
+              onSelectAllTokens={() => setSelectedTokenIds(tokens.map((t) => t.id))}
+              sampleStyle={sampleStyle}
+              onApplyStyleToSelection={applyStyleToSelection}
+            />
+          </aside>
         </div>
       </div>
-      <section id="center">
-        <div className="hero">
-          <img src={heroImg} className="base" width="170" height="179" alt="" />
-          <img src={reactLogo} className="framework" alt="React logo" />
-          <img src={viteLogo} className="vite" alt="Vite logo" />
-        </div>
-        <div>
-          <h1>Get started</h1>
-          <p>
-            Edit <code>src/App.tsx</code> and save to test <code>HMR</code>
-          </p>
-        </div>
-        <button
-          className="counter"
-          onClick={() => setCount((count) => count + 1)}
-        >
-          Count is {count}
-        </button>
-      </section>
-
-      <div className="ticks"></div>
-
-      <section id="next-steps">
-        <div id="docs">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#documentation-icon"></use>
-          </svg>
-          <h2>Documentation</h2>
-          <p>Your questions, answered</p>
-          <ul>
-            <li>
-              <a href="https://vite.dev/" target="_blank">
-                <img className="logo" src={viteLogo} alt="" />
-                Explore Vite
-              </a>
-            </li>
-            <li>
-              <a href="https://react.dev/" target="_blank">
-                <img className="button-icon" src={reactLogo} alt="" />
-                Learn more
-              </a>
-            </li>
-          </ul>
-        </div>
-        <div id="social">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#social-icon"></use>
-          </svg>
-          <h2>Connect with us</h2>
-          <p>Join the Vite community</p>
-          <ul>
-            <li>
-              <a href="https://github.com/vitejs/vite" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#github-icon"></use>
-                </svg>
-                GitHub
-              </a>
-            </li>
-            <li>
-              <a href="https://chat.vite.dev/" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#discord-icon"></use>
-                </svg>
-                Discord
-              </a>
-            </li>
-            <li>
-              <a href="https://x.com/vite_js" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#x-icon"></use>
-                </svg>
-                X.com
-              </a>
-            </li>
-            <li>
-              <a href="https://bsky.app/profile/vite.dev" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#bluesky-icon"></use>
-                </svg>
-                Bluesky
-              </a>
-            </li>
-          </ul>
-        </div>
-      </section>
-
-      <div className="ticks"></div>
-      <section id="spacer"></section>
-    </>
+    </div>
   )
 }
-
-export default App
